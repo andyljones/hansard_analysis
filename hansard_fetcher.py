@@ -12,6 +12,7 @@ import pandas as pd
 import dateutil
 import os
 import itertools as it 
+import time
 
 DEBATES_LINKS = 'http://www.theyworkforyou.com/pwdata/scrapedxml/debates'
 
@@ -40,16 +41,29 @@ def extract_dates(filenames):
     results.index = new_index
     
     return results.sort_index()
+
+def progress_report(count, total, start_time):
+    time_so_far = time.time() - start_time    
+    time_per = time_so_far/float(max(count, 1))
+    time_to_go = (total - count)*time_per
     
-def get_debate_xmls(filenames):
+    time_so_far_string = time.strftime('%H:%M:%S', time.gmtime(time_so_far))
+    time_to_go_string = time.strftime('%H:%M:%S', time.gmtime(time_to_go))
+    output = "Processing {0} of {1} in {2}, {3} still to go".format(\
+        count, total, time_so_far_string, time_to_go_string )
+
+    return output
+
+def get_debate_xmls(filenames, verbose=True):
     urls = [DEBATES_LINKS + '/' + filename for filename in filenames]
     
+    start_time = time.time()    
     results = []
     for i, url in enumerate(urls):
-        print('Fetching {0} of {1}, {2}'.format(i, len(urls), url))
+        if i % 10 == 0 and verbose: print(progress_report(i, len(urls), start_time))
         result = urllib2.urlopen(url).read()
         results.append(result)
-        
+            
     return results
     
 def get_debate_xml_since(datestring, dated_filenames):
